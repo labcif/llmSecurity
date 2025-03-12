@@ -1,0 +1,22 @@
+[project]
+name = "api-llm"
+version = "0.1.0"
+description = "python scripts to interact with llama3.1:8b llm"
+authors = [
+    {name = "Francisco Crespo",email = "2221482@my.ipleiria.pt"}
+]
+
+requires-python = ">=3.12,<4.0"
+dependencies = [
+    "fastapi (>=0.115.11,<0.116.0)",
+    "uvicorn (>=0.34.0,<0.35.0)",
+    "ollama (>=0.4.7,<0.5.0)",
+    "python-dotenv (>=1.0.1,<2.0.0)",
+    "requests (>=2.32.3,<3.0.0)",
+    "pandas (>=2.2.3,<3.0.0)",
+    "dotenv (>=0.9.9,<0.10.0)"
+]
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"

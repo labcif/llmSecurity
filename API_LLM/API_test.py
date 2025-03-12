@@ -14,10 +14,10 @@ headers = {
 
 print("\n Enter your prompt bellow, press 'q' to exit !")
 
-current_model = "llama3.2:latest"
+current_model = "llama3.1:8b"
 print(f"\n Current model being used is: '{current_model}' if you want to change type 'ch model' !")
 
-available_models = ["llama3.2:latest", "llama3.1:8b"]
+available_models = ["llama3.1:8b [censored]","dolphin3:latest [uncensored]"]
 print("\n Available LLM Models:")
 for model in available_models:
     print(f"   - {model}")
@@ -30,7 +30,7 @@ while True:
             print("\n Exiting... Goodbye!")
             break
 
-        if user_prompt.lower() == 'ch model':  # change from 3.2 to 3.1 or vice versa
+        if user_prompt.lower() == 'ch model':  # change from 3.1 censored to 3.1 uncensored (dolphin) or vice versa
             
             response = requests.post(change_url, headers=headers)
 

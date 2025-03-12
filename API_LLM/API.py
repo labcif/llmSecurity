@@ -22,7 +22,7 @@ print(API_KEY_CREDITS)
 
 app = FastAPI() # initializes FastAPI app, and allows to define routes
 
-current_model = "llama3.2:latest" # acts as default
+current_model = "llama3.1:8b" # acts as default
 
 def verify_api_key(HeaderKey: str = Header(None)): # HeaderKey is extracted from the headers in HTTP requests
     
@@ -40,10 +40,10 @@ def change_model(HeaderKey: str = Depends(verify_api_key)):
     global current_model  
 
     # toggle model selection
-    if current_model == "llama3.2:latest":
-        current_model = "llama3.1:8b"
+    if current_model == "llama3.1:8b":
+        current_model = "dolphin3:latest"
     else:
-        current_model = "llama3.2:latest"
+        current_model = "llama3.1:8b"
 
     return {"message": {current_model}}
 
