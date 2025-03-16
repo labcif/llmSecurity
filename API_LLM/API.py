@@ -9,6 +9,7 @@ from pydantic import BaseModel
 # pydantic model for API requests
 class PromptRequest(BaseModel):
     prompt: str
+    #temperature: float = 0.0 # ensures a predictable and consistente response
 
 load_dotenv()  # loads value from environment file (stored API key)
 N_CREDITS = 1000000 # high number to test with prompts extracted from datasets
@@ -53,7 +54,11 @@ def generate(request: PromptRequest, HeaderKey: str = Depends(verify_api_key)):
 
     try: # try except block is used in order for the API not to crash if ollama.chat fails
 
-        response = ollama.chat(model=current_model, messages=[{"role": "user", "content": request.prompt}]) # calls the LLM model (in this case it is Llama)
+        response = ollama.chat(  # calls the LLM model 
+            model=current_model, 
+            messages=[{"role": "user", "content": request.prompt}],
+            options={"temperature": 0, "top_p": 0} # temperature and top_p are always 0 which ensures a predictable and consistente response
+        )  
         return {"response": response["message"]["content"]} # returns LLM response to previous sent prompt, in JSON format
     
     except Exception as e:
