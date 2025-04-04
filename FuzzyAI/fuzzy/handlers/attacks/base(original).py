@@ -1,5 +1,4 @@
 import asyncio
-import time
 import logging
 import uuid
 from contextlib import asynccontextmanager
@@ -76,7 +75,7 @@ class BaseAttackTechniqueHandler(BaseAttackTechniqueHandlerProto, Generic[T]):
                 
         self._max_workers = max_workers
         self._break_when = break_when
-
+        
         self._attack_id = attack_id or uuid.uuid4().hex
         self._completed_prompts: set[str] = set()
         self._progress_bar: Optional[tqdm] = None
@@ -167,26 +166,21 @@ class BaseAttackTechniqueHandler(BaseAttackTechniqueHandlerProto, Generic[T]):
 
         # Check for previous attack results
         attack_params = await self._check_previous_attack(result, attack_params)
-
+        
         for param in attack_params:
             self._params_queue.put_nowait(param)
-   
+
         await aiofiles.os.makedirs('.out', exist_ok=True)
         results_file_path = Path(".out") / self._attack_id if self._attack_id else Path(".out") / self._attack_id
         results_file = await aiofiles.open(results_file_path, "a", encoding="utf-8")
         
         for i in range(self._max_workers):
-           
             pending_tasks.add(asyncio.create_task(self._consume_attack_params(results_file), name=f"{i}"))
-
 
         try:
             while True:
-
                 done, pending_tasks = await asyncio.wait(pending_tasks, return_when=asyncio.FIRST_COMPLETED, timeout=60)
-
                 for task in done:
-  
                     entry: Optional[list[AttackResultEntry]] = task.result()
                     if entry:
                         result.entries.extend(entry) # type: ignore
@@ -195,7 +189,6 @@ class BaseAttackTechniqueHandler(BaseAttackTechniqueHandlerProto, Generic[T]):
                 
                 if result.entries and self._break_when in (AttackBreakWhen.FIRST_COMPLETED, AttackBreakWhen.FIRST_RESULT):
                     for task in pending_tasks:
-    
                         task.cancel()
 
                     await asyncio.gather(*pending_tasks, return_exceptions=True)
@@ -313,7 +306,7 @@ class BaseAttackTechniqueHandler(BaseAttackTechniqueHandlerProto, Generic[T]):
     Args:
         results_file (Any): File to write the results to.
     Returns:
-        Optional[list[AttackResultEntry]]: Attack results. With execution_time
+        Optional[list[AttackResultEntry]]: Attack results.
     """
     async def _consume_attack_params(self, results_file: Any) -> Optional[list[AttackResultEntry]]:
         results: list[AttackResultEntry] = []
@@ -335,12 +328,8 @@ class BaseAttackTechniqueHandler(BaseAttackTechniqueHandlerProto, Generic[T]):
                     self._params_queue.task_done()
                     continue
 
-                # Measure execution time
-                start_time = asyncio.get_event_loop().time()
                 entry = await self._attack(**param)
-
                 if entry:
-
                     # Make sure we haven't stored a result for this prompt already
                     if entry.original_prompt in self._completed_prompts:
                         logger.debug("Skipping completed prompt")
@@ -361,11 +350,6 @@ class BaseAttackTechniqueHandler(BaseAttackTechniqueHandlerProto, Generic[T]):
                         except RefinementException as e:
                             logger.error(f"Error refining response: {e}")
                             raise RefinementException(f"Failed to refine answer: {e}")
-                    
-                    # gets the execution time of the prompt
-                    end_time = asyncio.get_event_loop().time()
-                    entry.execution_time = end_time - start_time
-
                     results.append(entry)
                     await results_file.writelines(entry.model_dump_json())
                     await results_file.flush()
@@ -382,9 +366,8 @@ class BaseAttackTechniqueHandler(BaseAttackTechniqueHandlerProto, Generic[T]):
             # Requeue the item
             if param:
                 self._params_queue.put_nowait(param)
-
         return results
-
+    
     def _generate_attack_params(self, prompts: list[AdversarialPromptDTO]) -> list[dict[str, Any]]:
         return [{"prompt": prompt.prompt} for prompt in prompts]
     

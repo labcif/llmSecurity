@@ -14,10 +14,9 @@ class AttackResultEntry(BaseModel):
     response: str = str()
     classifications: dict[str, Any] = {}
     extra: dict[str, Any] = {}
-    execution_time: float = 0.0  # stores the execution time of the given prompt
 
     def __str__(self) -> str:
-        return super().__str__() + f"(prompt={self.current_prompt}, execution_time={self.execution_time})"
+        return super().__str__() + f"(prompt={self.current_prompt})"
     
 class AttackSummary(MongoDocument):
     attack_mode: str = str()

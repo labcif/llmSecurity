@@ -60,9 +60,9 @@ def main():
         f"{cmd} -a per -c rat -x {uncensored_model} -e attack_model={uncensored_model} -e judge_model=ollama/qwen2.5:latest -x ollama/qwen2.5:latest",
         f"{cmd} -a hal -c obv -x ollama/qwen2.5",
         f"{cmd} -a asc -c obv -x ollama/qwen2.5", 
-        f"{cmd} -a dan -c obv -x ollama/qwen2.5 -e context_window=10000 question_placeholder=Question answer_placeholder=Response",
+        #f"{cmd} -a dan -c obv -x ollama/qwen2.5 -e context_window=10000 question_placeholder=Question answer_placeholder=Response", # ALTERAR os -e
         f"{cmd} -a crs -c obv -x ollama/qwen2.5 -e questions_generation_model=ollama/qwen2.5",
-        f"{cmd} -a act -c obv -x ollama/qwen2.5", 
+        f"{cmd} -a act -c obv -x ollama/qwen2.5", # ? crash?
         f"{cmd} -a pst -c obv -x {uncensored_model} -cm ollama/qwen2.5 -e tag_extraction_model={uncensored_model}",
         f"{cmd} -a pig -c obv -x {uncensored_model} -cm ollama/qwen2.5",
         f"{cmd} -a man -c obv -x {uncensored_model} -cm ollama/qwen2.5",

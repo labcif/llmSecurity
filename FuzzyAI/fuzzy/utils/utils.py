@@ -1,5 +1,7 @@
 import json
 import logging
+import os
+import shutil
 
 from openpyxl import load_workbook
 from openpyxl.styles import Alignment, PatternFill
@@ -394,6 +396,14 @@ REPORT_TEMPLATE = '''
 def excel_report(report: FuzzerResult) -> None:
         
     file_path = "report.xlsx"  
+    
+    for entry in report.attacking_techniques or []:
+        for model_entry in entry.models:
+            
+            model = model_entry.name
+            method = entry.attack_mode
+            
+    directory_name = model.split('/')[1].split(':')[0]
 
     try:
         workbook = load_workbook(file_path)
@@ -404,26 +414,79 @@ def excel_report(report: FuzzerResult) -> None:
     except Exception as e:
         print(f"An error occurred: {e}")
 
-    next_row = 2
-    #print(f"Starting row: {next_row}")
+    txt_path = os.path.join(os.path.dirname(__file__), "..", "total_attack_time.txt")
+    txt_path = os.path.abspath(txt_path)
 
+    with open(txt_path, "r", encoding="utf-8") as f:
+        content = f.read().strip()
+    try:
+        attack_time = float(content)
+    except ValueError:
+        logger.error("Error getting attack_time from total_attack_time.txt")
+        attack_time = None
+        
+    #print(f"Attack took {attack_time} seconds")
 
     green = f"✅"
     red = f"❌"
     alignment_style = Alignment(horizontal="center", vertical="center", wrap_text=True)
     grey_fill = PatternFill(start_color="D3D3D3", end_color="D3D3D3", fill_type="solid")
 
+    # writes the total attack time into excel
+    sheet.cell(row=1, column=2, value=f"{attack_time} segundos")  
+    sheet.cell(row=1, column=2).alignment = alignment_style      
+
+    next_row = 3
+    runtime_index = 0
+    #print(f"Starting row: {next_row}")
+
+    execution_times = []
+
+    try:
+        jsonl_path = f'results/{directory_name}/{method + "__" + CURRENT_TIMESTAMP}/raw.jsonl'
+        #logger.info(f"Attempting to load execution times from: {jsonl_path}")
+
+        if not os.path.exists(jsonl_path):
+            raise FileNotFoundError(f"raw.jsonl file not found at path: {jsonl_path}")
+
+        # extracts the execution_time from raw.jsonl file
+        with open(jsonl_path, "r", encoding="utf-8") as f:
+            for line in f:
+                try:
+                    obj = json.loads(line)
+
+                    if "entries" in obj and isinstance(obj["entries"], list):
+                        for entry in obj["entries"]:
+                            if "execution_time" in entry:
+                                execution_times.append(entry["execution_time"])
+                            else:
+                                logger.warning(f"No 'execution_time' in entry: {entry}")
+                    else:
+                        logger.warning(f"'entries' not found or invalid in object: {obj}")
+
+                except json.JSONDecodeError as e:
+                    logger.error(f"JSON decoding failed for line: {line.strip()} | Error: {e}")
+
+        #logger.info(f"Execution times loaded ({len(execution_times)}):")
+        #for i, t in enumerate(execution_times):
+            #logger.info(f"{i}: {t}")
+
+    except Exception as e:
+        logger.error(f"Failed to load execution times: {e}")
+        execution_times = []
+
+    #logger.info(f"Execution times loaded ({len(execution_times)}):")
+    #for i, t in enumerate(execution_times):
+        #logger.info(f"{i}: {t}")
+
     for entry in report.attacking_techniques or []:
         for model_entry in entry.models:
-
-            model = model_entry.name
-            method = entry.attack_mode
-
+    
             for failed_prompts in model_entry.failed_prompts:
                 prompt = failed_prompts.original_prompt    
                 adversarial = failed_prompts.harmful_prompt #or "-"
                 resposta = failed_prompts.harmful_response 
-
+                
                 #print(prompt)
                 #print(adversarial)
                 #print(resposta)
@@ -434,8 +497,15 @@ def excel_report(report: FuzzerResult) -> None:
                 sheet.cell(row=next_row, column=4, value=adversarial)
                 sheet.cell(row=next_row, column=5, value=resposta)
                 sheet.cell(row=next_row, column=6, value=red)
+                # querie runtime
+                if runtime_index < len(execution_times):
+                    #logger.info(execution_times[runtime_index])
+                    sheet.cell(row=next_row, column=7, value=execution_times[runtime_index])
+                else:
+                    sheet.cell(row=next_row, column=7, value="N/A")
                 
                 next_row += 1 
+                runtime_index += 1
             
             for successful_prompts in model_entry.harmful_prompts:
                 prompt = successful_prompts.original_prompt 
@@ -452,8 +522,15 @@ def excel_report(report: FuzzerResult) -> None:
                 sheet.cell(row=next_row, column=4, value=adversarial)
                 sheet.cell(row=next_row, column=5, value=resposta)
                 sheet.cell(row=next_row, column=6, value=green)
+                # querie runtime
+                if runtime_index < len(execution_times):
+                    #logger.info(execution_times[runtime_index])
+                    sheet.cell(row=next_row, column=7, value=execution_times[runtime_index])
+                else:
+                    sheet.cell(row=next_row, column=7, value="N/A")
                 
                 next_row += 1 
+                runtime_index += 1
 
     columns = {
         "prompt": "A",
@@ -462,6 +539,7 @@ def excel_report(report: FuzzerResult) -> None:
         "adversarial": "D",
         "resposta": "E",
         "jailbreak": "F",
+        "runtime": "G",
     }
 
     for row in sheet.iter_rows(min_row=2, max_row=sheet.max_row, min_col=1, max_col=len(columns)):
@@ -470,18 +548,27 @@ def excel_report(report: FuzzerResult) -> None:
             cell.alignment = alignment_style
             if cell.column_letter in [columns["prompt"], columns["jailbreak"]]:
                 cell.fill = grey_fill  # Apply grey fill
-           
-   
-    sheet.row_dimensions[next_row].height = 60  
-    directory_name = model.split('/')[1].split(':')[0]
-    output_path = f'results/{directory_name}/{method+'__'+CURRENT_TIMESTAMP}/report.xlsx'
 
+    # adds total attack runtime to excel
+    #sheet.cell(row=1 column=2, value=prompt)
+
+    sheet.row_dimensions[next_row].height = 60  
+
+    output_path = f'results/{directory_name}/{method+'__'+CURRENT_TIMESTAMP}/report.xlsx'
+    output_txt = f'results/{directory_name}/{method+'__'+CURRENT_TIMESTAMP}'
+    
     try:
         workbook.save(output_path)
         workbook.close()
         logger.info(f"Report generated at {output_path}")
     except Exception as e:
         logger.error(f"Failed to save Excel report: {e}")
+
+    try:
+        shutil.copy(txt_path, output_txt)
+        logger.info(f"Copied total_attack_time.txt to {output_txt}")
+    except Exception as e:
+        logger.error(f"Failed to copy total_attack_time.txt: {e}")
 
 def generate_report(report: FuzzerResult) -> None:
     try:
@@ -589,3 +676,5 @@ def generate_report(report: FuzzerResult) -> None:
     except Exception as ex:
         logger.error(f"Error generating report: {str(ex)}")
         raise
+
+    

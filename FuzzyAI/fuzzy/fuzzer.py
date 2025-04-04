@@ -224,8 +224,20 @@ class Fuzzer:
                 else:
                     logger.error(f'Failed to attack {len(prompts)} prompts for attack mode {attack_mode}')
         
-        logger.info('Done, took %s seconds', time.time() - start_time)
-        
+        # needs to be sent to excel
+        attack_time = time.time() - start_time
+        logger.info('Done, took %s seconds', attack_time)
+
+        file_path = os.path.join(os.path.dirname(__file__), "total_attack_time.txt")
+
+        # saves the attack time of the current attack inside a .txt file
+        try:
+            with open(file_path, "w", encoding="utf-8") as f:
+                f.write(f"{attack_time:.4f}")
+            logger.info(f"Attack time {attack_time} written to {file_path}")
+        except Exception as e:
+            logger.error(f"Error writing attack time: {e}")
+            
         if attack_handler is not None and self._cleanup:
             await asyncio.gather(attack_handler.close())
 
