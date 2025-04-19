@@ -4,7 +4,7 @@ from typing import Any
 
 from fuzzy.handlers.attacks.base import attack_handler_fm
 from fuzzy.handlers.attacks.enums import FuzzerAttackMode
-from fuzzy.handlers.attacks.taxonomy.handler import TaxonomyParaphraser
+from fuzzy.handlers.attacks.taxonomy.handler_EN import TaxonomyParaphraser
 
 logger = logging.getLogger(__name__)
 

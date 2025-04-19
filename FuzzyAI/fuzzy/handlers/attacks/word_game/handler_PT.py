@@ -9,7 +9,7 @@ from fuzzy.handlers.attacks.base import (BaseAttackTechniqueHandler, BaseAttackT
                                          attack_handler_fm)
 from fuzzy.handlers.attacks.enums import FuzzerAttackMode
 from fuzzy.handlers.attacks.models import AttackResultEntry
-from fuzzy.handlers.attacks.word_game.word_game_prompts import (HINTS_GENERATION_PROMPT, REPHRASING_PROMPT,
+from fuzzy.handlers.attacks.word_game.word_game_prompts_PT import (HINTS_GENERATION_PROMPT, REPHRASING_PROMPT,
                                                                 WORD_GAME_PLUS_PROMPT, WORD_GAME_PROMPT,
                                                                 WORD_IDENTIFICATION_PROMPT)
 from fuzzy.llm.models import BaseLLMProviderResponse

@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from fuzzy.handlers.attacks.base import (BaseAttackTechniqueHandler,
                                          attack_handler_fm)
 from fuzzy.handlers.attacks.enums import FuzzerAttackMode
-from fuzzy.handlers.attacks.hallucinations.prompt import PROMPT_TEMPLATE
+from fuzzy.handlers.attacks.hallucinations.prompt_EN import PROMPT_TEMPLATE
 from fuzzy.handlers.attacks.models import AttackResultEntry
 from fuzzy.handlers.db.adv_prompts import AdversarialPromptDTO
 from fuzzy.llm.providers.base import BaseLLMMessage, BaseLLMProvider

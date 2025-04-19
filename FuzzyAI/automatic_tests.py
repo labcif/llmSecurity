@@ -1,3 +1,5 @@
+#python .\automatic_tests.py ollama/llama3.1:8b ollama/dolphin3:latest resources/10prompts.txt pt -> run this command to test this program
+
 import subprocess
 import time
 import sys
@@ -7,6 +9,7 @@ def run_command(command: str):
     start_time = time.time()
     print(f"Running: {command}")
     process = subprocess.run(command, shell=True)
+    
     end_time = time.time()
     elapsed_time = end_time - start_time
     print(f"\n\n ------> Completed in {elapsed_time:.2f} seconds <------ \n")
@@ -14,7 +17,9 @@ def run_command(command: str):
 
 def main():
 
-    expected_args = 3  # expected args
+    # ACRESCENTAR TEMPERATURA
+
+    expected_args = 4  # expected args
     provided_args = len(sys.argv) - 1  # exclude script name
 
     if provided_args < expected_args:
@@ -30,17 +35,21 @@ def main():
         print("  - PROVIDER/MODEL              -> ex: ollama/llama3.1:8b (LLM to attack)")
         print("  - PROVIDER/UNCENSORED_MODEL   -> ex: ollama/dolphin3:latest (helper LLM, we recommend an uncensored one)")
         print("  - PROMPTS_PATH                -> Path to file with prompts\n")
+        print("  - LANGUAGE                    -> Attacking language (options: 'pt' for portuguese or 'en' for english)\n")
         print("ollama/qwen2.5 is needed to run this program\n")
         sys.exit(1)
 
     provider_model = sys.argv[1]
     uncensored_model = sys.argv[2]
     prompts_path = sys.argv[3]
+    language = sys.argv[4]
+    #temperature = sys.argv[5]
 
     print(f"Arguments received:")
     print(f" -> LLM to attack: {provider_model}")
     print(f" -> Uncensored LLM: {uncensored_model}")
     print(f" -> Prompts file: {prompts_path}\n")
+    print(f" -> Language: {language}\n")
     
     # Activate Poetry
 
@@ -54,18 +63,18 @@ def main():
     commands = [
         f"{cmd} -a shu -c sco",
         f"{cmd} -a bon -c obv",
-        f"{cmd} -a wrd -c obv -x {uncensored_model} -e game_generation_model={uncensored_model}",  
-        f"{cmd} -a exp -c obv",
-        f"{cmd} -a tax -c obv -x {uncensored_model} -e taxonomy_model={uncensored_model}", 
-        f"{cmd} -a per -c rat -x {uncensored_model} -e attack_model={uncensored_model} -e judge_model=ollama/qwen2.5:latest -x ollama/qwen2.5:latest",
-        f"{cmd} -a hal -c obv -x ollama/qwen2.5",
+        f"{cmd} -a wrd -c obv -x {uncensored_model} -e game_generation_model={uncensored_model} -l {language}",  # language sensitive
+        f"{cmd} -a exp -c obv -l {language}",  # language sensitive
+        f"{cmd} -a tax -c obv -x {uncensored_model} -e taxonomy_model={uncensored_model} -l {language}",  # language sensitive
+        f"{cmd} -a per -c rat -x {uncensored_model} -e attack_model={uncensored_model} -e judge_model=ollama/qwen2.5:latest -x ollama/qwen2.5:latest -l {language}", # language sensitive
+        f"{cmd} -a hal -c obv -x ollama/qwen2.5 -l {language}", # language sensitive
         f"{cmd} -a asc -c obv -x ollama/qwen2.5", 
-        #f"{cmd} -a dan -c obv -x ollama/qwen2.5 -e context_window=10000 question_placeholder=Question answer_placeholder=Response", # ALTERAR os -e
-        f"{cmd} -a crs -c obv -x ollama/qwen2.5 -e questions_generation_model=ollama/qwen2.5",
-        f"{cmd} -a act -c obv -x ollama/qwen2.5", # ? crash?
-        f"{cmd} -a pst -c obv -x {uncensored_model} -cm ollama/qwen2.5 -e tag_extraction_model={uncensored_model}",
+        f"{cmd} -a dan -c obv -x ollama/qwen2.5 -l {language}", # language sensitive
+        f"{cmd} -a crs -c obv -x ollama/qwen2.5 -e questions_generation_model=ollama/qwen2.5 -l {language}", # language sensitive
+        #f"{cmd} -a act -c obv -x ollama/qwen2.5", # ? crash?
+        f"{cmd} -a pst -c obv -x {uncensored_model} -cm ollama/qwen2.5 -e tag_extraction_model={uncensored_model} -l {language}", # language sensitive
         f"{cmd} -a pig -c obv -x {uncensored_model} -cm ollama/qwen2.5",
-        f"{cmd} -a man -c obv -x {uncensored_model} -cm ollama/qwen2.5",
+        f"{cmd} -a man -c obv -x {uncensored_model} -cm ollama/qwen2.5 -e question_placeholder=Question -e answer_placeholder=Response -e context_window=10000 -l {language}" # language sensitive
     ]
     
     total_start_time = time.time()
@@ -85,4 +94,3 @@ def main():
 if __name__ == "__main__":
     main()
 
-# .\automatic_tests.py ollama/llama3.1:8b ollama/dolphin3:latest resources/10prompts.txt -> run this command to test this program

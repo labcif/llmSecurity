@@ -8,7 +8,7 @@ from fuzzy.enums import LLMRole
 from fuzzy.handlers.attacks.base import (BaseAttackTechniqueHandler,
                                          BaseAttackTechniqueHandlerException,
                                          attack_handler_fm)
-from fuzzy.handlers.attacks.crescendo.prompts import (
+from fuzzy.handlers.attacks.crescendo.prompts_EN import (
     QUESTION_GENERATION_CONCISE_QUESTIONS, QUESTION_GENERATION_PROMPT_TEMPLATE,
     QUESTION_GENERATION_PROMPT_TEMPLATE_PREFIX)
 from fuzzy.handlers.attacks.enums import FuzzerAttackMode

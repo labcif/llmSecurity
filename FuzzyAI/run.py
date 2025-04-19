@@ -3,6 +3,8 @@ import asyncio
 import json
 import logging
 import shlex
+import os
+import pandas as pd
 from typing import Any, Optional
 
 import aiofiles
@@ -21,6 +23,7 @@ from fuzzy.llm.providers.enums import LLMProvider
 from fuzzy.utils.custom_logging_formatter import CustomFormatter
 from fuzzy.utils.utils import CURRENT_TIMESTAMP, generate_report, print_report, excel_report
 from utils import run_ollama_list_command
+from fuzzy.language import set_language, get_language
 
 logging.basicConfig(level=logging.INFO)
 
@@ -76,6 +79,9 @@ async def main() -> None:
     parser.add_argument('-w', '--max_workers', help='Max workers (default: 1)', type=int, default=1)
     parser.add_argument('-i', '--attack_id', help='Load previous attack id', type=str, default=None)
     parser.add_argument('-C', '--configuration_file', help='Load fuzzer arguments from JSON configuration file', type=open, action=LoadFromFile)
+    
+    # new argument, language
+    parser.add_argument('-l', '--language', help="Language used by attack handlers (should be the same language as the prompts)(default: en). Avaliable options: 'en', 'pt'", type=str,choices=['en', 'pt'], default='en')
 
     # create models help string
     models: dict[LLMProvider, list[str]] = {}
@@ -130,6 +136,18 @@ async def main() -> None:
                         help='Shows all the ollama models that are installed on the station')
     args = parser.parse_args()
 
+    set_language(args.language)
+    language = get_language()
+
+    if language == 'en':
+        logger.info("Attack language set to English")
+    else:
+        #logger.info(language)
+        # only loads other handlers if language is not english, in this case loads pt handlers
+        from fuzzy.handlers.attacks.__init__ import load_language_specific_handlers
+        load_language_specific_handlers()
+        logger.info("Idioma de ataque definido para Português")
+
     if args.verbose:
         logger.info('Verbose logging ON')
         logging.getLogger().setLevel(logging.DEBUG)
@@ -176,10 +194,40 @@ async def main() -> None:
     except Exception:
         raise ValueError(f"Error adding extra argument, please make sure you use the correct format, i.e -e key=value. For further help, please check the wiki: {WIKI_LINK}")
 
+    # new function used to correct ascii coding errors, usefull when prompts inside the file are in other languanges besides english
+    def load_prompts_from_file(file_path: str) -> list[str]:
+        _, ext = os.path.splitext(file_path)
+        ext = ext.lower()
+        prompts = []
+
+        if ext == '.txt':
+            with open(file_path, 'r', encoding='utf-8') as f:
+                prompts = [line.strip() for line in f if line.strip()]
+
+        elif ext == '.json':
+            with open(file_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                if isinstance(data, list):
+                    prompts = [str(item).strip() for item in data if str(item).strip()]
+                elif isinstance(data, dict):
+                    prompts = [str(v).strip() for v in data.values() if str(v).strip()]
+
+        elif ext == '.csv':
+            df = pd.read_csv(file_path, encoding='utf-8')
+            prompts = df.iloc[:, 0].dropna().astype(str).str.strip().tolist()
+
+        elif ext in ['.xls', '.xlsx']:
+            df = pd.read_excel(file_path)
+            prompts = df.iloc[:, 0].dropna().astype(str).str.strip().tolist()
+
+        else:
+            raise ValueError(f"Unsupported file format: {ext}")
+
+        return prompts
+
     if hasattr(args, 'target_prompts_file') and args.target_prompts_file:
-        with open(args.target_prompts_file, 'r') as f:
-            prompts = f.readlines()
-        prompts = [prompt.strip() for prompt in prompts if prompt.strip()]
+        prompts = load_prompts_from_file(args.target_prompts_file)
+        #logger.info(prompts)
     else:
         prompts = args.target_prompt
 

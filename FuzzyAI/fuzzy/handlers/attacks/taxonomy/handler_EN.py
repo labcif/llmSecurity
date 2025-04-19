@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 from fuzzy.handlers.attacks.base import BaseAttackTechniqueHandler, attack_handler_fm
 from fuzzy.handlers.attacks.enums import FuzzerAttackMode
 from fuzzy.handlers.attacks.models import AttackResultEntry
-from fuzzy.handlers.attacks.taxonomy.prompts import PERSUASION_PROMPT
+from fuzzy.handlers.attacks.taxonomy.prompts_EN import PERSUASION_PROMPT
 from fuzzy.handlers.db.adv_prompts import AdversarialPromptDTO
 from fuzzy.llm.models import BaseLLMProviderResponse
 from fuzzy.llm.providers.base import BaseLLMProvider

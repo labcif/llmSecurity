@@ -12,9 +12,9 @@ from fuzzy.handlers.attacks.base import (AttackBreakWhen,
                                          attack_handler_fm)
 from fuzzy.handlers.attacks.enums import FuzzerAttackMode
 from fuzzy.handlers.attacks.paraphraser.enums import PersuasiveActor
-from fuzzy.handlers.attacks.paraphraser.models import (
+from fuzzy.handlers.attacks.paraphraser.models_EN import (
     PersuasiveIterationTargetOutput, PersusiveIterationResponse)
-from fuzzy.handlers.attacks.paraphraser.prompts import \
+from fuzzy.handlers.attacks.paraphraser.prompts_EN import \
     get_attacker_system_prompt
 from fuzzy.handlers.attacks.proto import AttackResultEntry
 from fuzzy.handlers.classifiers.enums import Classifier
