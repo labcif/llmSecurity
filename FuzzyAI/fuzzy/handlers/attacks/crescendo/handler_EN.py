@@ -16,6 +16,9 @@ from fuzzy.handlers.attacks.models import AttackResultEntry
 from fuzzy.llm.providers.base import (BaseLLMMessage, BaseLLMProvider,
                                       BaseLLMProviderException)
 
+from fuzzy.temperature import get_temperature
+from fuzzy.top_p import get_top_p
+
 logger = logging.getLogger(__name__)
 
 DEFAULT_QUESTIONS_GENERATION_MODEL: Final[str] = DEFAULT_OPEN_SOURCE_MODEL
@@ -43,7 +46,8 @@ class CrescendoAttackHandler(BaseAttackTechniqueHandler[CrescendoAttackHandlerEx
     starting with innocuous queries and gradually steering the dialogue toward restricted or sensitive topics.
     """
     def __init__(self, **extra: Any):
-        super().__init__(**extra)
+        filtered_extra = {k: v for k, v in extra.items() if v is not None}
+        super().__init__(**filtered_extra)
         if (model := self._extra_args.questions_generation_model) not in self._model_queue_map:
             raise RuntimeError(f"Questions generation model: {model} was not added to the fuzzer,"
                                " please make sure you add it with -x <provider/model> and set"
@@ -76,7 +80,18 @@ class CrescendoAttackHandler(BaseAttackTechniqueHandler[CrescendoAttackHandlerEx
             for index, question in enumerate(questions,start=1):
                 logger.info(f"Running question: {question}")
                 chat_messages.append(BaseLLMMessage(role=LLMRole.USER, content=question))
-                last_answer = await llm.chat(chat_messages)
+
+                temp = get_temperature()
+                top_p = get_top_p()
+
+                if temp is not None and top_p is not None:
+                    last_answer = await llm.chat(chat_messages, temperature=temp, top_p=top_p, max_tokens=1000000)
+                elif temp is not None and top_p is None:
+                    last_answer = await llm.chat(chat_messages, temperature=temp, max_tokens=1000000)
+                elif temp is None and top_p is not None:
+                    last_answer = await llm.chat(chat_messages, top_p=top_p, max_tokens=1000000)
+                else:
+                    last_answer = await llm.chat(chat_messages, max_tokens=1000000)
 
                 if last_answer is None:
                     raise AnswerGenerationException("No response from the target model")

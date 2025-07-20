@@ -73,7 +73,8 @@ class ActorAttackHandler(BaseAttackTechniqueHandler[ActorAttackHandlerExtraParam
     """
 
     def __init__(self, **extra: Any):
-        super().__init__(**extra)
+        filtered_extra = {k: v for k, v in extra.items() if v is not None}
+        super().__init__(**filtered_extra)
         for index, model in enumerate([self._extra_args.behavior_extraction_model,
                                        self._extra_args.actors_generation_model,
                                        self._extra_args.questions_generation_model]):

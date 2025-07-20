@@ -12,6 +12,9 @@ from fuzzy.handlers.db.adv_prompts import AdversarialPromptDTO
 from fuzzy.llm.models import BaseLLMProviderResponse
 from fuzzy.llm.providers.base import BaseLLMProvider
 
+from fuzzy.temperature import get_temperature
+from fuzzy.top_p import get_top_p
+
 logger = logging.getLogger(__name__)
 
 MAX_RETRY_COUNT = 1
@@ -28,7 +31,8 @@ class TaxonomyParaphraser(BaseAttackTechniqueHandler[TaxonomyParaphraserExtraPar
     """
 
     def __init__(self, **extra: Any):
-        super().__init__(**extra)
+        filtered_extra = {k: v for k, v in extra.items() if v is not None}
+        super().__init__(**filtered_extra)
 
         self._taxonomies: list[dict[str, Any]] = []
 
@@ -82,7 +86,17 @@ class TaxonomyParaphraser(BaseAttackTechniqueHandler[TaxonomyParaphraserExtraPar
                                     extra={"category": category})
             
             async with self._borrow(self._model) as llm:
-                llm_response = await llm.generate(posioned_question, max_tokens=max_tokens)
+                temp = get_temperature()
+                top_p = get_top_p()
+
+                if temp is not None and top_p is not None:
+                    llm_response = await llm.generate(posioned_question, temperature=temp, top_p=top_p, max_tokens=1000000)
+                elif temp is not None and top_p is None:
+                    llm_response = await llm.generate(posioned_question, temperature=temp, max_tokens=1000000)
+                elif temp is None and top_p is not None:
+                    llm_response = await llm.generate(posioned_question, top_p=top_p, max_tokens=1000000)
+                else:
+                    llm_response = await llm.generate(posioned_question, max_tokens=1000000)
 
             classifications = await self._classify_llm_response(llm_response, original_prompt=prompt)
             result.extra["sample_rounds"] = num_tries

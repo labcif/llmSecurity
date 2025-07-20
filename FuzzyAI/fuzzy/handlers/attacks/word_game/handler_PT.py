@@ -15,6 +15,9 @@ from fuzzy.handlers.attacks.word_game.word_game_prompts_PT import (HINTS_GENERAT
 from fuzzy.llm.models import BaseLLMProviderResponse
 from fuzzy.llm.providers.base import BaseLLMMessage, BaseLLMProvider
 
+from fuzzy.temperature import get_temperature
+from fuzzy.top_p import get_top_p
+
 logger = logging.getLogger(__name__)
 
 DEFAULT_GAME_GENERATION_MODEL: Final[str] = DEFAULT_OPEN_SOURCE_MODEL
@@ -33,7 +36,8 @@ class WordGameAttackHandler(BaseAttackTechniqueHandler[WordGameAttackHandlerExtr
     Word Game attack handler - bypass the safety measures of LLMs by simultaneously obfuscating both the input queries and the expected responses.
     """
     def __init__(self, **extra: Any):
-        super().__init__(**extra)
+        filtered_extra = {k: v for k, v in extra.items() if v is not None}
+        super().__init__(**filtered_extra)
         self._word_identification_prompt_response: Optional[BaseLLMProviderResponse] = None
         self._rephrasing_prompt_response: Optional[BaseLLMProviderResponse] = None
         self._hints_generation_prompt_response: Optional[BaseLLMProviderResponse] = None
@@ -77,7 +81,18 @@ class WordGameAttackHandler(BaseAttackTechniqueHandler[WordGameAttackHandlerExtr
                     word_game=self._hints_generation_prompt_response.response,
                     masked_query=self._rephrasing_prompt_response.response)
 
-            response = await llm.generate(changed_prompt, **self._extra)
+            temp = get_temperature()
+            top_p = get_top_p()
+
+            if temp is not None and top_p is not None:
+                response = await llm.generate(changed_prompt, temperature=temp, top_p=top_p, max_tokens=1000000)
+            elif temp is not None and top_p is None:
+                response = await llm.generate(changed_prompt, temperature=temp, max_tokens=1000000)
+            elif temp is None and top_p is not None:
+                response = await llm.generate(changed_prompt, top_p=top_p, max_tokens=1000000)
+            else:
+                response = await llm.generate(changed_prompt, max_tokens=1000000)
+
             result = AttackResultEntry(original_prompt=prompt,
                                        current_prompt=changed_prompt,
                                        response=response.response) if response else None

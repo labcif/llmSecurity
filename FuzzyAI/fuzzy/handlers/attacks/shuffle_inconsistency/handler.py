@@ -11,6 +11,9 @@ from fuzzy.handlers.attacks.models import AttackResultEntry
 from fuzzy.handlers.classifiers import HarmfulScoreLLMClassifier, HarmScore
 from fuzzy.handlers.classifiers.enums import Classifier
 
+from fuzzy.temperature import get_temperature
+from fuzzy.top_p import get_top_p
+
 logger = logging.getLogger(__name__)
 
 @dataclass
@@ -30,7 +33,8 @@ class ShuffleInconsistencyAttackHandler(BaseAttackTechniqueHandler[ShuffleAttack
     Implements the SI-Attack text shuffling mechanism with HarmfulScoreLLMClassifier
     """
     def __init__(self, **extra: Any):
-        super().__init__(**extra)
+        filtered_extra = {k: v for k, v in extra.items() if v is not None}
+        super().__init__(**filtered_extra)
         self._best_attempt: Optional[ShuffleAttempt] = None
 
     def _verify_supported_classifiers(self) -> None:
@@ -140,7 +144,17 @@ class ShuffleInconsistencyAttackHandler(BaseAttackTechniqueHandler[ShuffleAttack
         if best_attempt and best_score >= self._extra_args.min_score_threshold:
             # Borrow the model again for a final LLM generate using the best attempt
             async with self._borrow(self._model) as llm:
-                final_response = await llm.generate(best_attempt.shuffled_text, **self._extra)
+                temp = get_temperature()
+                top_p = get_top_p()
+
+                if temp is not None and top_p is not None:
+                    final_response = await llm.generate(best_attempt.shuffled_text, temperature=temp, top_p=top_p, max_tokens=1000000)
+                elif temp is not None and top_p is None:
+                    final_response = await llm.generate(best_attempt.shuffled_text, temperature=temp, max_tokens=1000000)
+                elif temp is None and top_p is not None:
+                    final_response = await llm.generate(best_attempt.shuffled_text, top_p=top_p, max_tokens=1000000)
+                else:
+                    final_response = await llm.generate(best_attempt.shuffled_text, max_tokens=1000000)
 
             self._best_attempt = best_attempt
             return AttackResultEntry(

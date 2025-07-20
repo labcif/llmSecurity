@@ -23,7 +23,8 @@ class PleaseAttackHandler(BaseAttackTechniqueHandler[PleaseAttackHandlerExtraPar
     """
 
     def __init__(self, **extra: Any):
-        super().__init__(**extra)
+        filtered_extra = {k: v for k, v in extra.items() if v is not None}
+        super().__init__(**filtered_extra)
 
     async def _attack(self, prompt: str, **extra: Any) -> Optional[AttackResultEntry]:
         llm: BaseLLMProvider
@@ -37,7 +38,8 @@ class PleaseAttackHandler(BaseAttackTechniqueHandler[PleaseAttackHandlerExtraPar
             if self._extra_args.add_suffix:
                 changed_prompt += ", please"
 
-            response = await llm.generate(changed_prompt, **self._extra)
+            #response = await llm.generate(changed_prompt, **self._extra)
+            response = await llm.generate(changed_prompt)
             result = AttackResultEntry(original_prompt=prompt,
                                        current_prompt=changed_prompt,
                                        response=response.response) if response else None

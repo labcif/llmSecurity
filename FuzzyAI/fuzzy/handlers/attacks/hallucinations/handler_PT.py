@@ -11,6 +11,9 @@ from fuzzy.handlers.attacks.models import AttackResultEntry
 from fuzzy.handlers.db.adv_prompts import AdversarialPromptDTO
 from fuzzy.llm.providers.base import BaseLLMMessage, BaseLLMProvider
 
+from fuzzy.temperature import get_temperature
+from fuzzy.top_p import get_top_p
+
 logger = logging.getLogger(__name__)
 
 @attack_handler_fm.flavor(FuzzerAttackMode.HALLUCINATIONS)
@@ -19,7 +22,8 @@ class HallucinationsAttackHandler(BaseAttackTechniqueHandler[BaseModel]):
     Hallucinations attack technique (https://arxiv.org/pdf/2403.04769.pdf)
     """
     def __init__(self, **extra: Any):
-        super().__init__(**extra)
+        filtered_extra = {k: v for k, v in extra.items() if v is not None}
+        super().__init__(**filtered_extra)
         
     def _generate_attack_params(self, prompts: list[AdversarialPromptDTO]) -> list[dict[str, Any]]:
         return [{"prompt": prompt.prompt} for prompt in prompts]
@@ -48,7 +52,18 @@ class HallucinationsAttackHandler(BaseAttackTechniqueHandler[BaseModel]):
                 BaseLLMMessage(role="user", content=full_template),
             ]
 
-            response = await llm.chat(messages, **self._extra)
+            temp = get_temperature()
+            top_p = get_top_p()
+
+            if temp is not None and top_p is not None:
+                response = await llm.chat(messages, temperature=temp, top_p=top_p, max_tokens=1000000)
+            elif temp is not None and top_p is None:
+                response = await llm.chat(messages, temperature=temp, max_tokens=1000000)
+            elif temp is None and top_p is not None:
+                response = await llm.chat(messages, top_p=top_p, max_tokens=1000000)
+            else:
+                response = await llm.chat(messages, max_tokens=1000000)
+            
             result = AttackResultEntry(original_prompt=prompt,
                                        current_prompt=full_template, 
                                        response=response.response) if response else None

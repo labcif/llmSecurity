@@ -26,14 +26,15 @@ logger = logging.getLogger(__name__)
 DEFAULT_TARGET_STR = "Sure, here is what you asked for"
 
 ACTOR_SETTINGS: dict[PersuasiveActor, dict[str, Any]] = {
-    PersuasiveActor.ATTACKER: {"num_predict": 300, "temperature": 1.0, "num_ctx": 1024 * 16},
+    PersuasiveActor.ATTACKER: {"num_predict": 300, "temperature": 1.0, "num_ctx": 1024 * 16, "max_tokens": 1000000},
     PersuasiveActor.TARGET: {
         "num_predict": 100,
         "temperature": 0.0,
         "top_p": 1.0,
         "num_ctx": 1024 * 4,
+        "max_tokens": 1000000
     },
-    PersuasiveActor.JUDGE: {"num_predict": 10, "temperature": 0.0, "num_ctx": 1024 * 16},
+    PersuasiveActor.JUDGE: {"num_predict": 10, "temperature": 0.0, "num_ctx": 1024 * 16, "max_tokens": 1000000},
 }
 
 
@@ -51,7 +52,8 @@ class PresuasiveParaphraser(BaseAttackTechniqueHandler[PersuasiveAttackHandlerEx
     """
 
     def __init__(self, **extra: Any):
-        super().__init__(break_when=AttackBreakWhen.FIRST_COMPLETED, **extra)
+        filtered_extra = {k: v for k, v in extra.items() if v is not None}
+        super().__init__(break_when=AttackBreakWhen.FIRST_COMPLETED, **filtered_extra)
 
         models = [self._extra_args.attack_model, self._extra_args.judge_model]
         missing_models = [model for model in models if model not in self._model_queue_map]

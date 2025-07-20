@@ -5,7 +5,7 @@ from .gpt_fuzzer.handler import GPTFuzzerAttackHandler
 from .history_framing.handler import HistoryFramingAttackHandler
 from .please.handler import PleaseAttackHandler
 
-# the attacks bellow are the ones we are focusing because we are using them in our automatation script
+# the attacks bellow are the ones we are focusing 
 
 from .shuffle_inconsistency.handler import ShuffleInconsistencyAttackHandler
 from .bon.handler import BonAttackHandler
@@ -25,6 +25,7 @@ from .paraphraser.handler_EN import PresuasiveParaphraser
 from .back_to_the_past.handler_EN import BackToThePastAttackHandler
 from .manyshot.handler_EN import ManyShotAttackHandler
 from .crescendo.handler_EN import CrescendoAttackHandler
+from .videogame_roleplay.handler_EN import VideoGameAttackHandler
 
 def load_language_specific_handlers():
     from fuzzy.language import get_language
@@ -40,5 +41,6 @@ def load_language_specific_handlers():
         from .back_to_the_past.handler_PT import BackToThePastAttackHandler
         from .manyshot.handler_PT import ManyShotAttackHandler
         from .crescendo.handler_PT import CrescendoAttackHandler
+        from .videogame_roleplay.handler_PT import VideoGameAttackHandler
     else:
         raise ValueError(f"Language not supported: {language}")

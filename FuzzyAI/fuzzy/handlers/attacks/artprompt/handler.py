@@ -31,7 +31,8 @@ class ArtPromptAttackHandler(BaseAttackTechniqueHandler[ArtPromptAttackHandlerEx
     """
 
     def __init__(self, **extra: Any):
-        super().__init__(**extra)
+        filtered_extra = {k: v for k, v in extra.items() if v is not None}
+        super().__init__(**filtered_extra)
 
         self._font_map: dict[str, str] = {}
         self._font_learn_task: Optional[asyncio.Task[None]] = None

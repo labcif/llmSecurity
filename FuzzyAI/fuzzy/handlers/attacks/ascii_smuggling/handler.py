@@ -9,6 +9,9 @@ from fuzzy.handlers.attacks.enums import FuzzerAttackMode
 from fuzzy.handlers.attacks.models import AttackResultEntry
 from fuzzy.llm.providers.base import BaseLLMProvider
 
+from fuzzy.temperature import get_temperature
+from fuzzy.top_p import get_top_p
+
 logger = logging.getLogger(__name__)
 
 class AsciiSmugglingExtraParams(BaseModel):
@@ -20,7 +23,8 @@ class AsciiSmugglingAttackHandler(BaseAttackTechniqueHandler[AsciiSmugglingExtra
     Ascii Smuggling attack handler - converts ascii to unicode chars
     """
     def __init__(self, **extra: Any):
-        super().__init__(**extra)
+        filtered_extra = {k: v for k, v in extra.items() if v is not None}
+        super().__init__(**filtered_extra)
 
     async def _attack(self, prompt: str, **extra: Any) -> Optional[AttackResultEntry]:
         result: Optional[AttackResultEntry] = None
@@ -29,7 +33,19 @@ class AsciiSmugglingAttackHandler(BaseAttackTechniqueHandler[AsciiSmugglingExtra
 
         async with self._borrow(self._model) as llm:
             _, encoded_prompt = self._encode_message(prompt, use_unicode_tags=self._extra_args.use_unicode_tags)
-            response = await llm.generate(prompt, **self._extra)
+                        
+            temp = get_temperature()
+            top_p = get_top_p()
+
+            if temp is not None and top_p is not None:
+                response = await llm.generate(prompt, temperature=temp, top_p=top_p, max_tokens=1000000)
+            elif temp is not None and top_p is None:
+                response = await llm.generate(prompt, temperature=temp, max_tokens=1000000)
+            elif temp is None and top_p is not None:
+                response = await llm.generate(prompt, top_p=top_p, max_tokens=1000000)
+            else:
+                response = await llm.generate(prompt, **self._extra)
+
             result = AttackResultEntry(original_prompt=prompt,
                                        current_prompt=encoded_prompt, 
                                        response=response.response) if response else None

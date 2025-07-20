@@ -10,6 +10,9 @@ from fuzzy.handlers.attacks.enums import FuzzerAttackMode
 from fuzzy.handlers.attacks.models import AttackResultEntry
 from fuzzy.llm.providers.base import BaseLLMProvider, BaseLLMProviderException
 
+from fuzzy.temperature import get_temperature
+from fuzzy.top_p import get_top_p
+
 logger = logging.getLogger(__name__)
 
 #NOTE: The variable below holds the suffix added to prompts by this attack. The question mark is intentionally omitted to achieve a higher ASR (Attack Success Rate).
@@ -47,7 +50,8 @@ class BackToThePastAttackHandler(BaseAttackTechniqueHandler[BackToThePastAttackH
     "years ago, when it was legal" to guide the language model's output in a controlled direction.
     """
     def __init__(self, **extra: Any):
-        super().__init__(**extra)
+        filtered_extra = {k: v for k, v in extra.items() if v is not None}
+        super().__init__(**filtered_extra)
         if (model := self._extra_args.tag_extraction_model) not in self._model_queue_map:
             raise RuntimeError(f"Profession extraction model: {model} was not added to the fuzzer,"
                                " please make sure you add it with -x <provider/model> and set"
@@ -76,7 +80,18 @@ class BackToThePastAttackHandler(BaseAttackTechniqueHandler[BackToThePastAttackH
             if self._extra_args.add_suffix:
                 changed_prompt += f" {PROMPT_SUFFIX}"
 
-            response = await llm.generate(changed_prompt, **self._extra)
+            temp = get_temperature()
+            top_p = get_top_p()
+
+            if temp is not None and top_p is not None:
+                response = await llm.generate(changed_prompt, temperature=temp, top_p=top_p, max_tokens=1000000)
+            elif temp is not None and top_p is None:
+                response = await llm.generate(changed_prompt, temperature=temp, max_tokens=1000000)
+            elif temp is None and top_p is not None:
+                response = await llm.generate(changed_prompt, top_p=top_p, max_tokens=1000000)
+            else:
+                response = await llm.generate(changed_prompt, max_tokens=1000000)
+
             result = AttackResultEntry(original_prompt=prompt,
                                        current_prompt=changed_prompt,
                                        response=response.response) if response else None

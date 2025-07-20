@@ -394,7 +394,15 @@ REPORT_TEMPLATE = '''
 '''
 
 def excel_report(report: FuzzerResult) -> None:
-        
+    
+    from fuzzy.language import get_language
+    from fuzzy.temperature import get_temperature
+    from fuzzy.top_p import get_top_p
+
+    language = get_language()
+    temperature:float = get_temperature()
+    top_p:float = get_top_p()
+
     file_path = "report.xlsx"  
     
     for entry in report.attacking_techniques or []:
@@ -443,7 +451,7 @@ def excel_report(report: FuzzerResult) -> None:
     execution_times = []
 
     try:
-        jsonl_path = f'results/{directory_name}/{method + "__" + CURRENT_TIMESTAMP}/raw.jsonl'
+        jsonl_path = f'results/{directory_name}/{method + '__'+language+'__' + CURRENT_TIMESTAMP}/raw.jsonl'
         #logger.info(f"Attempting to load execution times from: {jsonl_path}")
 
         if not os.path.exists(jsonl_path):
@@ -504,6 +512,16 @@ def excel_report(report: FuzzerResult) -> None:
                 else:
                     sheet.cell(row=next_row, column=7, value="N/A")
                 
+                if temperature != None:
+                    sheet.cell(row=next_row, column=8, value=temperature)
+                else:
+                    sheet.cell(row=next_row, column=8, value="model default value")
+
+                if top_p != None:
+                    sheet.cell(row=next_row, column=9, value=top_p)
+                else:
+                    sheet.cell(row=next_row, column=9, value="model default value")
+
                 next_row += 1 
                 runtime_index += 1
             
@@ -528,6 +546,16 @@ def excel_report(report: FuzzerResult) -> None:
                     sheet.cell(row=next_row, column=7, value=execution_times[runtime_index])
                 else:
                     sheet.cell(row=next_row, column=7, value="N/A")
+
+                if temperature != None:
+                    sheet.cell(row=next_row, column=8, value=temperature)
+                else:
+                    sheet.cell(row=next_row, column=8, value="model default value")
+
+                if top_p != None:
+                    sheet.cell(row=next_row, column=9, value=top_p)
+                else:
+                    sheet.cell(row=next_row, column=9, value="model default value")
                 
                 next_row += 1 
                 runtime_index += 1
@@ -540,6 +568,8 @@ def excel_report(report: FuzzerResult) -> None:
         "resposta": "E",
         "jailbreak": "F",
         "runtime": "G",
+        "temperatura": "H",
+        "top_p":"I"
     }
 
     for row in sheet.iter_rows(min_row=2, max_row=sheet.max_row, min_col=1, max_col=len(columns)):
@@ -554,8 +584,8 @@ def excel_report(report: FuzzerResult) -> None:
 
     sheet.row_dimensions[next_row].height = 60  
 
-    output_path = f'results/{directory_name}/{method+'__'+CURRENT_TIMESTAMP}/report.xlsx'
-    output_txt = f'results/{directory_name}/{method+'__'+CURRENT_TIMESTAMP}'
+    output_path = f'results/{directory_name}/{method+'__'+language+'__'+CURRENT_TIMESTAMP}/report.xlsx'
+    output_txt = f'results/{directory_name}/{method+'__'+language+'__'+CURRENT_TIMESTAMP}'
     
     try:
         workbook.save(output_path)
@@ -571,6 +601,9 @@ def excel_report(report: FuzzerResult) -> None:
         logger.error(f"Failed to copy total_attack_time.txt: {e}")
 
 def generate_report(report: FuzzerResult) -> None:
+    from fuzzy.language import get_language
+
+    language = get_language()
     try:
         # Process data for the report
         model_success_rate = []
@@ -667,7 +700,7 @@ def generate_report(report: FuzzerResult) -> None:
         directory_name = model_name.split('/')[1].split(':')[0]
 
         # Save the report
-        output_path = f'results/{directory_name}/{mode+'__'+CURRENT_TIMESTAMP}/report.html'
+        output_path = f'results/{directory_name}/{mode+'__'+language+'__'+CURRENT_TIMESTAMP}/report.html'
         with open(output_path, 'w') as f:
             f.write(html_data)
             

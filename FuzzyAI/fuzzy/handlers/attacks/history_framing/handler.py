@@ -16,7 +16,8 @@ class HistoryFramingAttackHandler(TaxonomyParaphraser):
     History framing attack technique
     """
     def __init__(self, **extra: Any) -> None:
-        super().__init__(**extra)
+        filtered_extra = {k: v for k, v in extra.items() if v is not None}
+        super().__init__(**filtered_extra)
 
         self._extra_args.taxonomy_model = DEFAULT_TAXONOMY_MODEL
 

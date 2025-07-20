@@ -62,7 +62,8 @@ class GPTFuzzerAttackHandler(BaseAttackTechniqueHandler[GPTFuzzerAttackHandlerEx
     """
 
     def __init__(self, **extra: Any):
-        super().__init__(**extra)
+        filtered_extra = {k: v for k, v in extra.items() if v is not None}
+        super().__init__(**filtered_extra)
 
         if self._extra_args.mutation_model not in self._model_queue_map:
             raise RuntimeError(f"Mutation model: {self._extra_args.mutation_model} was not added to the fuzzer,"

@@ -34,7 +34,8 @@ class GeneticAttackTechniqueHandler(BaseAttackTechniqueHandler[BaseModel]):
     """
 
     def __init__(self, **extra: Any):
-        super().__init__(**extra)
+        filtered_extra = {k: v for k, v in extra.items() if v is not None}
+        super().__init__(**filtered_extra)
 
         self._population_seed = "! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! !"
         self._suffixes_batch_size = 16
