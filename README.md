@@ -5,7 +5,7 @@
 
 This repository contains the complete codebase for **"Cybersecurity in LLMs: Exploration of Vulnerabilities,"** a research project from the Instituto Politécnico de Leiria.
 
-The project presents a comprehensive, automated pipeline designed to evaluate the security and robustness of locally executed Large Language Models (LLMs). It systematically applies large-scale adversarial attacks to identify and analyze vulnerabilities[cite: 23, 24].
+The project presents a comprehensive, automated pipeline designed to evaluate the security and robustness of locally executed Large Language Models (LLMs). It systematically applies large-scale adversarial attacks to identify and analyze vulnerabilities.
 
 ## Core Features
 
@@ -24,7 +24,7 @@ The project presents a comprehensive, automated pipeline designed to evaluate th
 
 The system is orchestrated by a series of custom Python scripts that manage the entire testing lifecycle:
 
-1.  **`automatic_tests.py`:** The main entry point. It iterates through all defined test combinations (Model, Language, `temperature`, `top_p`).
+1.  **`automatic_tests.py`:** The main entry point. It iterates through all defined test combinations (`Model`, `Language`, `temperature`, `top_p`, (...) ).
 2.  **`automatic_args_handler.py`:** This script receives parameters from the main test runner and constructs the precise execution commands for the fuzzer.
 3.  **FuzzyAI Fuzzer (Modified):** The core testing engine. It takes the commands, applies the specified adversarial attack to the target prompts, and queries the local LLM via Ollama.
 4.  **Metric Generation:** The modified fuzzer exports detailed metrics for each attack run into a dedicated Excel file, logging the prompt, response, parameters, and execution time.
@@ -32,9 +32,7 @@ The system is orchestrated by a series of custom Python scripts that manage the 
 6.  **Data Compilation:** A final script aggregates all individual test results from their respective directories into one master Excel file.
 7.  **Graph Generation:** Analytics scripts process the master file to create the final graphs and visualizations seen in the report.
 
-
-
-<img width="1244" height="590" alt="image" src="https://github.com/user-attachments/assets/1453437a-db5b-477f-a606-53c00bc6f01b" />
+<img width="1333" height="818" alt="Test Automation Scripts" src="https://github.com/user-attachments/assets/3eddd81e-4d00-4e7c-8eae-39e7520d300c" />
 
 ---
 
@@ -43,7 +41,7 @@ The system is orchestrated by a series of custom Python scripts that manage the 
 This project is built on the [cyberark/FuzzyAI Fuzzer](https://github.com/cyberark/FuzzyAI), but includes substantial modifications to enhance its capabilities for systematic research.
 
 * **New Attack: Videogame Roleplay:** Implemented a novel attack vector (`vgr`) that frames malicious requests within a fictitious videogame scenario to bypass ethical guardrails.
-* **Improved Attack: Crescendo:** Heavily modified the existing `crs` attack to improve its logic and effectiveness. **This contribution was accepted via Pull Request to the official FuzzyAI Fuzzer repository**.
+* **Improved Attack: Crescendo:** Heavily modified the existing `crs` attack to improve its logic and effectiveness.
 * **Multilingual Support:** Refactored attack handlers and classifiers to support non-English languages, with full support for Portuguese added.
 * **Dynamic Parameterization:** Added command-line arguments and handler logic to control the `temperature` and `top_p` of the target LLM for each test run.
 * **Enhanced Data Export:** Built a new module to automatically export all attack metrics (prompt, response, runtime, params, etc.) to a structured Excel file.
@@ -65,22 +63,22 @@ This study evaluated three popular open-source models, all executed locally via 
 ### Adversarial Attacks
 A total of 14 distinct attack techniques were selected and applied:
 
-| Attack Name | Abbreviation |
-| :--- | :--- |
-| ASCII Smuggling | `asc` |
-| Best of N | `bon` |
-| Crescendo | `crs` |
-| Do Anything Now (DAN) | `dan` |
-| Thought Experiment | `exp` |
-| Hallucinations | `hal` |
-| Many-shot Prompting | `man` |
-| Paraphraser | `per` |
-| Pig Latin | `pig` |
-| Videogame Roleplay | `vgr` |
-| Back to the Past | `pst` |
-| Shuffle Inconsistency | `shu` |
-| Taxonomy | `tax` |
-| Word Game | `wrd` |
+| Attack Name | Abbreviation | Description | 
+| :--- | :--- | :--- |
+| ASCII Smuggling | `asc` | Embeds hidden instructions using invisible Unicode Tags, which LLMs can process, posing a prompt injection risk. Filtering these tags is crucial to prevent exploitation |
+| Best of N | `bon` | Exploits prompt augmentations to elicit harmful responses from AI models across modalities, achieving high success rates with repeated sampling |
+| Crescendo | `crs` | Engaging the model in a series of escalating conversational turns, starting with innocuous queries and gradually steering the dialogue toward restricted or sensitive topics |
+| Do Anything Now (DAN) | `dan` | Promotes the LLM to adopt an unrestricted persona that ignores standard content filters, allowing it to "Do Anything Now" |
+| Thought Experiment | `exp` | Modifies the prompt by adding a thought experiment-related prefix and precautions implemented suffix |
+| Hallucinations | `hal` | Uses Hallucinations to Bypass RLHF Filters |
+| Many-shot Prompting | `man` | Exploits large context windows in language models by embedding multiple fake dialogue examples, gradually weakening the model's safety responses |
+| Paraphraser | `per` | Automates the generation of adversarial prompts by pairing two LLMs (“attacker” and “target”) to iteratively refine prompts until achieving jailbreak |
+| Pig Latin | `pig` | Structural attack that works by altering the surface-level structure of the text without changing its underlying meaning |  
+| Videogame Roleplay | `vgr` | Wraps a adversarial prompt with a specific prefix and suffix related to videogames, this narrative framing is designed to induce the model to suspend its normal security filters, treating the interaction as a harmless, fictional simulation | 
+| Back to the Past | `pst` | Modifies the prompt by adding a profession-based prefix and a past related suffix | 
+| Shuffle Inconsistency | `shu` | Shuffles harmful prompts to bypass safety while remaining comprehensible to the LLM | 
+| Taxonomy | `tax` | Uses persuasive language techniques like emotional appeal and social proof to jailbreak LLMs | 
+| Word Game | `wrd` | Disguises harmful prompts as word puzzles | 
 
 ---
 
